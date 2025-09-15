@@ -1,0 +1,13 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/class_names.json",
+      "sha1": "6aedb077c615202ba8680df62c4eb9a4673d8257"
+    },
+    {
+      "path": "assets/model.ptl",
+      "sha1": "eacd46dee187b414704d59bd066fbae65cfa5197"
+    }
+  ]
+}
