@@ -10,6 +10,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  ImageBackground,
   TouchableOpacity,
   Image,
 } from 'react-native';
@@ -19,8 +20,19 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {NativeModules} from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { savePrediction } from '../services/storageService';
+import ScreenWrapper from "../components/ScreenWrapper";
+import { Card } from "../components/Card";
+import { Heading, BodyText } from "../components/Typography";
+import { PrimaryButton } from "../components/Button";
+import { theme } from "../theme/theme";
+// =========================================================================
+// == FINAL FIX: Import react-native-blob-util
+// =========================================================================
+import RNFetchBlob from 'react-native-blob-util';
 
 const {PytorchModule} = NativeModules;
+
+const backgroundImg = require("../assets/bg.png");
 
 interface Prediction {
   breed: string;
@@ -101,6 +113,7 @@ export default function HomeScreen() {
       setPhoto(null);
     };
   }, []);
+  
 
   const processImage = useCallback(async (uri: string) => {
     if (!uri || !user) {
@@ -130,7 +143,7 @@ export default function HomeScreen() {
       setPredictionResult(rawResult);
       
       // =========================================================================
-      // == NEW: UPLOAD IMAGE TO SUPABASE STORAGE
+      // == UPLOAD IMAGE TO SUPABASE STORAGE
       // =========================================================================
       console.log('Step 2: Uploading image to cloud storage...');
       
@@ -138,12 +151,15 @@ export default function HomeScreen() {
       const fileName = `${uuid.v4()}.${fileExtension}`;
       const filePath = `${user.id}/${fileName}`;
       
-      const response = await fetch(uri);
-      const fileBlob = await response.blob();
+      // =========================================================================
+      // == FINAL FIX: Use RNFetchBlob to read and upload the file
+      // =========================================================================
+      const response = await RNFetchBlob.fs.readFile(uri.replace('file://', ''), 'base64');
+      const uint8Array = new Uint8Array(RNFetchBlob.base64.decode(response).split('').map(c => c.charCodeAt(0)));
       
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('prediction_images') // The bucket name we created
-        .upload(filePath, fileBlob, {
+        .from('prediction_images')
+        .upload(filePath, uint8Array, {
           contentType: `image/${fileExtension}`,
           upsert: false,
         });
@@ -257,22 +273,30 @@ export default function HomeScreen() {
 
 
   const renderContent = () => {
-    // ... (This function remains unchanged)
     if (isLoading) {
-      return <ActivityIndicator size="large" color="#007AFF" style={styles.feedbackView} />;
+      return (
+        <ActivityIndicator
+          size="large"
+          color={theme.colors.accent} // 🟨 golden spinner
+          style={styles.feedbackView}
+        />
+      );
     }
     if (error) {
-      return <Text style={[styles.feedbackView, styles.errorText]}>{error}</Text>;
+      return (
+        <Text style={[styles.feedbackView, styles.errorText]}>{error}</Text>
+      );
     }
     if (predictionResult) {
       return (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultTitle}>Prediction Results</Text>
+        <Card>
+          <Heading>Prediction Results</Heading>
           <Text style={styles.topPredictionText}>
             {predictionResult.top_prediction.breed}
           </Text>
           <Text style={styles.confidenceText}>
-            Confidence: {(predictionResult.top_prediction.confidence * 100).toFixed(1)}%
+            Confidence:{" "}
+            {(predictionResult.top_prediction.confidence * 100).toFixed(1)}%
           </Text>
           <View style={styles.topKContainer}>
             <Text style={styles.topKTitle}>Other possibilities:</Text>
@@ -282,98 +306,120 @@ export default function HomeScreen() {
               </Text>
             ))}
           </View>
-        </View>
+        </Card>
       );
     }
     return (
       <View style={styles.feedbackView}>
-        <Text style={styles.placeholderText}>
-          Use the buttons below to identify a breed.
-        </Text>
+        <BodyText>Use the buttons below to identify a breed.</BodyText>
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Bovine Breed Identifier</Text>
-          <Text style={styles.subtitle}>
-              Model Status: {modelLoaded ? 'Ready' : 'Loading...'}
-          </Text>
-          
-          {photo && (
-              <Image source={{uri: photo}} style={styles.imagePreview} />
-          )}
-          
-          {renderContent()}
+      <ImageBackground
+        source={backgroundImg}
+        style={styles.background}
+        resizeMode="repeat"
+      >
+        <ScreenWrapper>
+          <ScrollView contentContainerStyle={styles.container}>
+            <Heading>Bovine Breed Identifier</Heading>
+            <BodyText>
+              Model Status: {modelLoaded ? "Ready" : "Loading..."}
+            </BodyText>
 
-          {/* UPDATED: Container for the two buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-                style={[styles.button, !modelLoaded || isLoading ? styles.buttonDisabled : {}]}
+            {photo && (
+              <Image source={{ uri: photo }} style={styles.imagePreview} />
+            )}
+
+            {renderContent()}
+
+            <View style={styles.buttonContainer}>
+              <PrimaryButton
+                title="Use Camera"
                 onPress={handleTakePhoto}
-                disabled={!modelLoaded || isLoading}>
-                <Text style={styles.buttonText}>
-                  Use Camera
-                </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={[styles.button, !modelLoaded || isLoading ? styles.buttonDisabled : {}]}
+                disabled={!modelLoaded || isLoading}
+              />
+              <PrimaryButton
+                title="From Gallery"
                 onPress={handleChooseFromGallery}
-                disabled={!modelLoaded || isLoading}>
-                <Text style={styles.buttonText}>
-                  From Gallery
-                </Text>
-            </TouchableOpacity>
-          </View>
-
-        </ScrollView>
+                disabled={!modelLoaded || isLoading}
+              />
+            </View>
+          </ScrollView>
+        </ScreenWrapper>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  // ... (Most styles remain the same)
-  safeArea: { flex: 1, backgroundColor: '#f5f5f5' },
-  container: { flexGrow: 1, alignItems: 'center', justifyContent: 'flex-start', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 20 },
-  imagePreview: { width: 300, height: 300, borderRadius: 15, marginBottom: 20, borderWidth: 2, borderColor: '#ddd' },
-  
-  // UPDATED: Styles for the button container and individual buttons
+  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  background: { flex: 1 },
+  container: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    padding: 20,
+  },
+  imagePreview: {
+    width: 300,
+    height: 300,
+    borderRadius: 15,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+  },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 'auto',
-    paddingBottom: 20,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    marginTop: 20,
   },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    paddingHorizontal: 20, // Adjusted padding
-    borderRadius: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    alignItems: 'center',
-    flex: 1, // Make buttons take up equal space
-    marginHorizontal: 10, // Add space between buttons
+  feedbackView: {
+    marginTop: 20,
+    minHeight: 100,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  buttonDisabled: { backgroundColor: '#a9a9a9' },
-  buttonText: { color: 'white', fontSize: 16, fontWeight: '600' }, // Slightly smaller font
-  feedbackView: { marginTop: 20, minHeight: 100, justifyContent: 'center', alignItems: 'center' },
-  placeholderText: { fontSize: 16, color: '#888', textAlign: 'center' },
-  errorText: { color: 'red', fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
-  resultContainer: { width: '100%', padding: 15, backgroundColor: 'white', borderRadius: 10, marginTop: 20, alignItems: 'center' },
-  resultTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  topPredictionText: { fontSize: 22, fontWeight: '700', color: '#007AFF' },
-  confidenceText: { fontSize: 16, color: '#444', marginBottom: 15 },
-  topKContainer: { width: '100%', borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10 },
-  topKTitle: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 5 },
-  topKItem: { fontSize: 14, color: '#666', marginVertical: 2 },
+  errorText: {
+    color: "red",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  topPredictionText: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: theme.colors.accent, // 🟨 golden top prediction
+    marginBottom: 8,
+    fontFamily: "serif",
+  },
+  confidenceText: {
+    fontSize: 16,
+    color: theme.colors.text,
+    marginBottom: 15,
+    fontFamily: "serif",
+  },
+  topKContainer: {
+    width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingTop: 10,
+  },
+  topKTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.text,
+    marginBottom: 5,
+    fontFamily: "serif",
+  },
+  topKItem: {
+    fontSize: 14,
+    color: "#555",
+    marginVertical: 2,
+    fontFamily: "serif",
+  },
 });

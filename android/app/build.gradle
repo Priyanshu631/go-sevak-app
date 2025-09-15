@@ -118,15 +118,26 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+        storeFile file('my-upload-key.keystore')
+        def properties = new Properties()
+        if (rootProject.file('keystore.properties').exists()) {
+            rootProject.file('keystore.properties').withInputStream { properties.load(it) }
+        }
+        storePassword properties['storePassword']
+        keyAlias 'my-key-alias'
+        keyPassword properties['keyPassword']
     }
+    }
+    
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Change this to use the new 'release' signingConfig
+            signingConfig signingConfigs.release
+            
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
@@ -149,3 +160,4 @@ dependencies {
 }
 
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+//apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
