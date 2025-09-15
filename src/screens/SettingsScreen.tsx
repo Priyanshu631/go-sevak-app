@@ -17,17 +17,35 @@ import { Card } from "../components/Card";
 import { Heading, BodyText } from "../components/Typography";
 import { theme } from "../theme/theme";
 
-const backgroundImg = require("../assets/bg.png"); // same as HistoryScreen
+const backgroundImg = require("../assets/bg.png");
 
 export default function SettingsScreen() {
   const { signOut, user } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleManualSync = async () => {
+    if (!user) {
+      Alert.alert("Error", "No user logged in.");
+      return;
+    }
+
     setIsSyncing(true);
-    const result = await manualSync();
-    Alert.alert(result.success ? "Sync Complete" : "Sync Info", result.message);
-    setIsSyncing(false);
+    try {
+      const result = await manualSync();
+
+      if (result.success) {
+        Alert.alert(
+          "Sync Complete",
+          `Uploaded: ${result.uploadedCount ?? 0}, Downloaded: ${result.downloadedCount ?? 0}`
+        );
+      } else {
+        Alert.alert("Sync Info", result.message);
+      }
+    } catch (error: any) {
+      Alert.alert("Sync Error", error.message || "An unknown error occurred.");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleClearHistory = () => {

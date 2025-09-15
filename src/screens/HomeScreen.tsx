@@ -1,5 +1,3 @@
-import { supabase } from '../lib/supabase';
-import uuid from 'react-native-uuid';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -25,7 +23,6 @@ import { Card } from '../components/Card';
 import { Heading, BodyText } from '../components/Typography';
 import { PrimaryButton } from '../components/Button';
 import { theme } from '../theme/theme';
-import RNFetchBlob from 'react-native-blob-util';
 
 const { PytorchModule } = NativeModules;
 const backgroundImg = require('../assets/bg.png');
@@ -49,6 +46,7 @@ export default function HomeScreen() {
   const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingUpload, setPendingUpload] = useState(false);
 
   useEffect(() => {
     StatusBar.setHidden(false, 'fade');
@@ -92,52 +90,52 @@ export default function HomeScreen() {
     };
   }, []);
 
-  const processImage = useCallback(async (uri: string) => {
-    if (!uri || !user) {
-      Alert.alert('Authentication Error', 'You must be logged in to make a prediction.');
-      return;
-    }
-    if (!modelLoaded) {
-      Alert.alert('Error', 'Please wait for the model to load completely.');
-      return;
-    }
-
-    setPhoto(uri);
-    setPredictionResult(null);
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const rawResult: PredictionResult = await PytorchModule.predict(uri);
-      if (!rawResult || !rawResult.top_prediction) throw new Error('Invalid prediction result');
-
-      setPredictionResult(rawResult);
-
-      const fileExtension = uri.split('.').pop() || 'jpg';
-      const fileName = `${uuid.v4()}.${fileExtension}`;
-      const filePath = `${user.id}/${fileName}`;
-      const response = await RNFetchBlob.fs.readFile(uri.replace('file://', ''), 'base64');
-      const uint8Array = new Uint8Array(RNFetchBlob.base64.decode(response).split('').map(c => c.charCodeAt(0)));
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('prediction_images')
-        .upload(filePath, uint8Array, { contentType: `image/${fileExtension}`, upsert: false });
-
-      if (uploadError) {
-        await savePrediction({ image_uri: uri, prediction_result: rawResult, timestamp: new Date().toISOString() }, user.id);
+  const processImage = useCallback(
+    async (uri: string) => {
+      if (!uri || !user) {
+        Alert.alert('Authentication Error', 'You must be logged in to make a prediction.');
+        return;
+      }
+      if (!modelLoaded) {
+        Alert.alert('Error', 'Please wait for the model to load completely.');
         return;
       }
 
-      const { data: urlData } = supabase.storage.from('prediction_images').getPublicUrl(uploadData.path);
-      const publicUrl = urlData.publicUrl;
-      await savePrediction({ image_uri: publicUrl, prediction_result: rawResult, timestamp: new Date().toISOString() }, user.id);
-    } catch (err: any) {
-      setError('Failed to process image. ' + err.message);
-      Alert.alert('Processing Error', 'Failed to process image. ' + err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [modelLoaded, user]);
+      setPhoto(uri);
+      setPredictionResult(null);
+      setError(null);
+      setIsLoading(true);
+      setPendingUpload(false);
+
+      try {
+        // --- Run local prediction ---
+        const rawResult: PredictionResult = await PytorchModule.predict(uri);
+        if (!rawResult || !rawResult.top_prediction) throw new Error('Invalid prediction result');
+
+        // --- Confidence check ---
+        if (rawResult.top_prediction.confidence < 0.25) {
+          setError('Confidence Too Low! Please upload a valid bovine breed image.');
+          setPredictionResult(null);
+          return;
+        }
+
+        // Save locally (pending sync) ✅ FIXED (timestamp auto-generated in service)
+        await savePrediction(
+          { image_uri: uri, prediction_result: rawResult },
+          user.id
+        );
+
+        setPredictionResult(rawResult);
+        setPendingUpload(true);
+      } catch (err: any) {
+        setError('Failed to process image. ' + err.message);
+        Alert.alert('Processing Error', 'Failed to process image. ' + err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [modelLoaded, user]
+  );
 
   const requestCameraPermission = useCallback(async () => {
     if (Platform.OS === 'android') {
@@ -200,6 +198,13 @@ export default function HomeScreen() {
                 <Text style={styles.confidenceText}>
                   Confidence: {(topConfidence * 100).toFixed(1)}%
                 </Text>
+
+                {pendingUpload && (
+                  <Text style={{ color: '#bd7d34ff', marginBottom: 10 ,fontFamily:'serif'}}>
+                    Pending Image Upload (Manual Sync Required)
+                  </Text>
+                )}
+
                 <View style={styles.topKContainer}>
                   <Text style={styles.topKTitle}>Other possibilities:</Text>
                   {predictionResult.top_k?.map((p: Prediction, i: number) => (
@@ -265,7 +270,14 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   contentContainer: { alignItems: 'center', width: '100%' },
-  imagePreview: { width: 300, height: 300, borderRadius: 15, marginBottom: 20, borderWidth: 2, borderColor: theme.colors.border },
+  imagePreview: {
+    width: 300,
+    height: 300,
+    borderRadius: 15,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+  },
   subtitle: { marginBottom: 20, color: theme.colors.text },
   uploadBox: {
     width: '100%',
@@ -281,9 +293,9 @@ const styles = StyleSheet.create({
   uploadSubtext: { fontSize: 12, color: theme.colors.textMuted },
   buttonContainer: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: 20 },
   errorText: { color: theme.colors.error, fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
-topPredictionText: { fontSize: 22, fontWeight: '700', color: theme.colors.accent, marginBottom: 8, fontFamily: 'serif' },
-confidenceText: { fontSize: 16, color: theme.colors.text, marginBottom: 15, fontFamily: 'serif' },
-topKContainer: { width: '100%', borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 10 },
-topKTitle: { fontSize: 14, fontWeight: '600', color: theme.colors.text, marginBottom: 5, fontFamily: 'serif' },
-topKItem: { fontSize: 14, color: theme.colors.text, marginVertical: 2, fontFamily: 'serif' },
+  topPredictionText: { fontSize: 22, fontWeight: '700', color: theme.colors.accent, marginBottom: 8, fontFamily: 'serif' },
+  confidenceText: { fontSize: 16, color: theme.colors.text, marginBottom: 15, fontFamily: 'serif' },
+  topKContainer: { width: '100%', borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 10 },
+  topKTitle: { fontSize: 14, fontWeight: '600', color: theme.colors.text, marginBottom: 5, fontFamily: 'serif' },
+  topKItem: { fontSize: 14, color: theme.colors.text, marginVertical: 2, fontFamily: 'serif' },
 });

@@ -5,7 +5,7 @@ export interface PredictionRecord {
   id: string; 
   user_id?: string;
   image_uri: string;
-  timestamp: string;
+  timestamp: string; // used for conditional sync (ISO string)
   status: 'pending_sync' | 'synced' | 'error';
   prediction_result: {
     top_prediction: { breed: string; confidence: number };
@@ -17,7 +17,7 @@ const getStorageKey = (userId: string) => `predictions_${userId}`;
 export const getLastSyncKey = (userId: string) => `lastSyncedAt_${userId}`;
 
 export const savePrediction = async (
-  record: Pick<PredictionRecord, 'image_uri' | 'prediction_result' | 'timestamp'>,
+  record: Pick<PredictionRecord, 'image_uri' | 'prediction_result'>,
   userId: string
 ): Promise<void> => {
   const userStorageKey = getStorageKey(userId);
@@ -27,6 +27,7 @@ export const savePrediction = async (
       id: uuid.v4() as string,
       user_id: userId,
       status: 'pending_sync',
+      timestamp: new Date().toISOString(), // always set here
       ...record,
     };
     const updatedRecords = [newRecord, ...existingRecords];
