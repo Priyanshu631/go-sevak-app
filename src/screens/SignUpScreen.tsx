@@ -1,14 +1,35 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Alert, StyleSheet, Text } from 'react-native';
-import { createClient } from '@supabase/supabase-js';
+import {
+  View,
+  TextInput,
+  Alert,
+  StyleSheet,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+} from 'react-native';
+import { Card } from '../components/Card';
+import { Heading } from '../components/Typography';
 import { supabase } from '../lib/supabase';
+import { theme } from '../theme/theme';
+import { PrimaryButton } from '../components/Button';
+
+const backgroundImg = require("../assets/bg.png");
 
 export default function SignUpScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [repeatPassword, setRepeatPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
+    if (password !== repeatPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) Alert.alert('Error', error.message);
@@ -17,31 +38,108 @@ export default function SignUpScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Create Account</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button title="Sign Up" onPress={handleSignUp} disabled={loading} />
-      <View style={{ marginVertical: 10 }} />
-      <Button title="Already have an account? Login" onPress={() => navigation.navigate('Login')} />
-    </View>
+    <ImageBackground
+      source={backgroundImg}
+      style={styles.background}
+      resizeMode="repeat"
+    >
+      <StatusBar barStyle="dark-content" translucent={true} backgroundColor="transparent" />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Card style={styles.card}>
+            <Heading style={styles.header}>Create Account</Heading>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#7a5c48b7"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#7a5c48b7"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Repeat Password"
+              placeholderTextColor="#7a5c48b7"
+              value={repeatPassword}
+              onChangeText={setRepeatPassword}
+              secureTextEntry
+            />
+
+            <View style={styles.buttonContainer}>
+              <PrimaryButton
+                title={loading ? 'Signing Up...' : 'Sign Up'}
+                onPress={handleSignUp}
+                disabled={loading}
+              />
+
+              <PrimaryButton
+                title="Already Have An Account? Login Here!"
+                onPress={() => navigation.navigate('Login')}
+              />
+            </View>
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
-// Add the same styles
+
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  header: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: 'gray', padding: 10, borderRadius: 5, marginBottom: 15 },
+  background: { flex: 1 },
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+  },
+  card: {
+    width: '100%',
+    padding: 20,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: 15,
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: 20,
+    fontSize: 24,
+    fontWeight: 'bold',
+    fontFamily: 'serif',
+    color: theme.colors.text,
+  },
+  input: {
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    fontFamily: 'serif',
+    marginBottom: 15,
+    color: theme.colors.text,
+    backgroundColor: 'transparent',
+  },
+  buttonContainer: {
+    marginTop: 10,
+    gap: 12,
+  },
 });

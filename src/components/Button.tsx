@@ -5,7 +5,7 @@ import { theme } from "../theme/theme";
 type Props = {
   title: string;
   onPress: () => void;
-  disabled?: boolean; // 👈 allow disabled
+  disabled?: boolean;
 };
 
 export const PrimaryButton: React.FC<Props> = ({ title, onPress, disabled }) => {
@@ -27,8 +27,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 10,
     alignItems: "center",
-    marginHorizontal: 5,
-    flex: 1,
   },
   text: {
     color: "white",

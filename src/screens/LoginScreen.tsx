@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Alert, StyleSheet, Text } from 'react-native';
-import { createClient } from '@supabase/supabase-js';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  Alert,
+  ImageBackground,
+  StatusBar,
+} from 'react-native';
+import { Card } from '../components/Card';
+import { Heading } from '../components/Typography';
 import { supabase } from '../lib/supabase';
+import { theme } from '../theme/theme';
+import { PrimaryButton } from '../components/Button';
+
+const backgroundImg = require("../assets/bg.png");
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -9,49 +21,102 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-  setLoading(true);
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  // Get the full response from Supabase
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    console.log("Login attempt error:", JSON.stringify(error, null, 2));
+    console.log("Login attempt data:", JSON.stringify(data, null, 2));
 
-  // --- ADD THESE LOGS FOR DEBUGGING ---
-  console.log("Login attempt error:", JSON.stringify(error, null, 2));
-  console.log("Login attempt data:", JSON.stringify(data, null, 2));
-  // --- END OF DEBUGGING LOGS ---
-
-  if (error) {
-    Alert.alert('Error', error.message);
-  }
-
-  setLoading(false);
-};
+    if (error) Alert.alert('Error', error.message);
+    setLoading(false);
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Welcome Back</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button title="Login" onPress={handleLogin} disabled={loading} />
-      <View style={{ marginVertical: 10 }} />
-      <Button title="Need an account? Sign Up" onPress={() => navigation.navigate('SignUp')} />
-    </View>
+    <ImageBackground
+      source={backgroundImg}
+      style={styles.background}
+      resizeMode="repeat"
+    >
+      <StatusBar barStyle="dark-content" translucent={true} backgroundColor="transparent" />
+      <View style={styles.container}>
+        <Card style={styles.card}>
+          <Heading style={styles.header}>Welcome Back</Heading>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#7a5c48b7"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#7a5c48b7"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <View style={styles.buttonContainer}>
+            <PrimaryButton
+              title={loading ? 'Logging In...' : 'Login'}
+              onPress={handleLogin}
+              disabled={loading}
+            />
+
+            <View style={{ height: 12 }} />
+
+            <PrimaryButton
+              title="Need An Account ? Sign Up !"
+              onPress={() => navigation.navigate('SignUp')}
+            />
+          </View>
+        </Card>
+      </View>
+    </ImageBackground>
   );
 }
-// Add the same styles as your previous AuthScreen
+
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  header: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: 'gray', padding: 10, borderRadius: 5, marginBottom: 15 },
+  background: { flex: 1 },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  card: {
+    width: '100%',
+    padding: 20,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: 15,
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: 20,
+    fontSize: 24,
+    fontWeight: 'bold',
+    fontFamily: 'serif',
+    color: theme.colors.text,
+  },
+  input: {
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    fontFamily: 'serif',
+    marginBottom: 15,
+    color: theme.colors.text,
+    backgroundColor: 'transparent',
+  },
+  buttonContainer: {
+    marginTop: 10,
+    width: '100%', // ensures buttons take full card width
+  },
 });
