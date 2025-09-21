@@ -108,23 +108,18 @@ export default function HomeScreen() {
       setPendingUpload(false);
 
       try {
-        // --- Run local prediction ---
         const rawResult: PredictionResult = await PytorchModule.predict(uri);
         if (!rawResult || !rawResult.top_prediction) throw new Error('Invalid prediction result');
 
-        // --- Confidence check ---
         if (rawResult.top_prediction.confidence < 0.25) {
           setError('Confidence Too Low! Please upload a valid bovine breed image.');
           setPredictionResult(null);
           return;
         }
-
-        // Save locally (pending sync) ✅ FIXED (timestamp auto-generated in service)
         await savePrediction(
           { image_uri: uri, prediction_result: rawResult },
           user.id
         );
-
         setPredictionResult(rawResult);
         setPendingUpload(true);
       } catch (err: any) {
@@ -200,12 +195,12 @@ export default function HomeScreen() {
                 </Text>
 
                 {pendingUpload && (
-                  <Text style={{ color: '#bd7d34ff', marginBottom: 10 ,fontFamily:'serif'}}>
+                  <Text style={{ color: '#bd7d34ff', marginBottom: 10, fontFamily: 'serif', textAlign: 'center' }}>
                     Pending Image Upload (Manual Sync Required)
                   </Text>
                 )}
 
-                <View style={styles.topKContainer}>
+                <View style={[styles.topKContainer, { backgroundColor: 'transparent' }]}>
                   <Text style={styles.topKTitle}>Other possibilities:</Text>
                   {predictionResult.top_k?.map((p: Prediction, i: number) => (
                     <Text key={i} style={styles.topKItem}>
@@ -236,10 +231,10 @@ export default function HomeScreen() {
   return (
     <ImageBackground source={backgroundImg} style={styles.background} resizeMode="repeat">
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      <SafeAreaView style={[styles.safeArea, { paddingBottom: insets.bottom }]}>
+      <SafeAreaView style={styles.safeArea}>
         <ScreenWrapper style={styles.screenWrapper}>
           <ScrollView
-            contentContainerStyle={[styles.scrollContainer, { paddingBottom: insets.bottom + 20 }]}
+            contentContainerStyle={[styles.scrollContainer, !photo && { flexGrow: 1, justifyContent: 'center' }]}
             style={{ width: '100%' }}
           >
             <Card style={styles.mainCard}>
@@ -259,8 +254,16 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   background: { flex: 1 },
   safeArea: { flex: 1, backgroundColor: 'transparent' },
-  screenWrapper: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  screenWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  scrollContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
   mainCard: {
     width: '100%',
     padding: 20,
@@ -268,13 +271,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: theme.colors.border,
     borderRadius: 15,
+    marginTop: 20,
+    marginBottom: 20,
   },
   contentContainer: { alignItems: 'center', width: '100%' },
   imagePreview: {
-    width: 300,
-    height: 300,
+    // FIX: Removed width: 300 to make it responsive
+    width: '100%',
+    aspectRatio: 1, // Add this to maintain aspect ratio
     borderRadius: 15,
-    marginBottom: 20,
+    // FIX: Increased marginBottom to create more space
+    marginBottom: 40,
     borderWidth: 2,
     borderColor: theme.colors.border,
   },
@@ -295,7 +302,13 @@ const styles = StyleSheet.create({
   errorText: { color: theme.colors.error, fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
   topPredictionText: { fontSize: 22, fontWeight: '700', color: theme.colors.accent, marginBottom: 8, fontFamily: 'serif' },
   confidenceText: { fontSize: 16, color: theme.colors.text, marginBottom: 15, fontFamily: 'serif' },
-  topKContainer: { width: '100%', borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 10 },
+  topKContainer: {
+    width: '100%',
+    backgroundColor: 'transparent',
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingTop: 10,
+  },
   topKTitle: { fontSize: 14, fontWeight: '600', color: theme.colors.text, marginBottom: 5, fontFamily: 'serif' },
   topKItem: { fontSize: 14, color: theme.colors.text, marginVertical: 2, fontFamily: 'serif' },
 });

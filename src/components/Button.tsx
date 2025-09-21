@@ -32,8 +32,9 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+    textAlign: "center",
   },
   disabled: {
-    backgroundColor: "#aaa", // grey out when disabled
+    backgroundColor: theme.colors.muted, // grey out when disabled
   },
 });
