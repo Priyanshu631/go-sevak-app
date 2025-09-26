@@ -1,97 +1,83 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# GoSevak
 
-# Getting Started
+![GoSevak Banner](./assets/banner.png)
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## An Offline-First AI Assistant for Bovine Breed Identification
 
-## Step 1: Start Metro
+### 🚀 Features
+- **On-Device AI Model:** Utilizes a PyTorch Lite model locally for instant, offline breed classification.
+- **Offline-First Functionality:** All predictions are saved locally first, ensuring the app is fully functional without an internet connection.
+- **User Authentication:** Secure user sign-up and login powered by Supabase Auth.
+- **Two-Way Cloud Sync:** Data for each authenticated user is securely synced to a Supabase backend.
+- **Multi-Device Support:** Synced predictions, including images, are available across all devices for a logged-in user.
+- **Cloud Image Storage:** Prediction images are uploaded to Supabase Storage, providing a permanent URL instead of a local path.
+- **Robust & Resilient:** Features retry logic for model loading and network requests, with graceful fallbacks for failed uploads.
+- **Cross-Platform:** Built with React Native for Android and could be ported to iOS.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### 📖 Table of Contents
+1. [Overview](#-overview)
+2. [Technology Stack](#-technology-stack)
+3. [AI Model & Native Implementation](#-ai-model--native-implementation)
+4. [Disclaimer](#️-disclaimer)
+5. [Installation](#️-installation)
+6. [Contributors](#-contributors)
+7. [License](#️-license)
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### 🔍 Overview
+This project was developed to address a critical challenge faced by Field Level Workers (FLWs) in India: the accurate identification of bovine breeds for the Bharat Pashudhan App. Network instability in rural areas makes cloud-based AI solutions impractical.
 
-```sh
-# Using npm
-npm start
+**GoSevak** solves this by packaging a trained AI model directly into a React Native application. It allows FLWs to get instant, accurate breed classifications in the field, save their work locally, and sync it to a central database whenever a stable connection is available. This ensures data integrity and improves the effectiveness of national livestock programs.
 
-# OR using Yarn
-yarn start
-```
+### 💻 Technology Stack
+- **Frontend:** React Native, TypeScript
+- **AI Model:** PyTorch Mobile Lite (`.ptl`)
+- **Backend & DB:** Supabase (Postgres, Auth, Storage)
+- **State Management:** React Context API
+- **Navigation:** React Navigation
 
-## Step 2: Build and run your app
+### 🧠 AI Model & Native Implementation
+The core of this application is its ability to run complex deep learning models directly on a mobile device.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+The full training process can be reviewed in the **[PTH Model Training Notebook](https://github.com/Priyanshu631/bovine-breeds/blob/main/apps/docs/indian-bovine-breeds-classification.ipynb)**.
 
-### Android
+**Key Insights:**
+- **Model Architecture:** Utilizes a `convnext_tiny` model from the `timm` library, fine-tuned on the dataset using transfer learning.
+- **Training:** Employs a two-phase training strategy (warmup and fine-tuning) with techniques like data augmentation, Mixup, and weighted sampling to handle class imbalance across 41 breeds.
+- **Performance:** Achieved a validation accuracy of **~65%** on the public dataset.
+- **Mobile Conversion:** The final `.pth` model was converted to a full-precision (`fp32`) PyTorch Lite (`.ptl`) format to ensure maximum accuracy for offline, on-device inference.
+- **Native Bridge:** A custom Kotlin Native Module (`PytorchModule.kt`) was built from scratch to interface with the React Native frontend. This was necessary as the official `react-native-pytorch-core` library was found to be an unsupported dependency for the project's configuration. The native module files can be requested from the contributors.
 
-```sh
-# Using npm
-npm run android
+### ⚠️ Disclaimer
+- The model was trained on a publicly available, non-curated dataset from Kaggle: **[Indian Bovine Breeds Dataset](https://www.kaggle.com/datasets/lukex9442/indian-bovine-breeds)**.
+- Due to potential inconsistencies or incorrect labels within this public data, the model's accuracy, while robust, may not reflect the performance achievable with an officially curated and verified dataset.
+- Performance can be significantly improved if curated data is provided by the responsible authorities.
 
-# OR using Yarn
+### ⚙️ Installation
+```bash
+# Clone the repository
+git clone https://github.com/Priyanshu631/GoSevakApp.git
+
+# Navigate to the project directory
+cd GoSevakApp
+
+# Install dependencies
+yarn install
+
+# Create a .env file in the root and add your Supabase keys
+# SUPABASE_URL=YOUR_SUPABASE_URL
+# SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+
+# Run the application
 yarn android
 ```
 
-### iOS
+### 📝 Contributors
+- **[Priyanshu Ranjan](https://github.com/Priyanshu631)** 
+- **[Rajveer Sanyal](https://github.com/rajveer0104)** 
+- **[Aniket Nag](https://github.com/homelesssnake-101)** 
+- **[Anurima Sarkar](https://github.com/Anurima2206)** 
+- **[Rajdeep Podder](https://github.com/raj-deep-20)**
+- **[Ritobrata Dutta](https://github.com/drito04)**
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+### ⚖️ License
+- **Check The LICENSE File In The Repo For MIT License.**
