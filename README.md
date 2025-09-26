@@ -68,7 +68,7 @@ You can directly install the pre-built application on your Android device.
 #### For Developers (Building from Source)
 ```bash
 # Clone the repository
-git clone [https://github.com/Priyanshu631/GoSevakApp.git](https://github.com/Priyanshu631/GoSevakApp.git)
+git clone https://github.com/Priyanshu631/GoSevakApp.git
 
 # Navigate to the project directory
 cd GoSevakApp
