@@ -196,7 +196,7 @@ export default function HomeScreen() {
 
                 {pendingUpload && (
                   <Text style={{ color: '#bd7d34ff', marginBottom: 10, fontFamily: 'serif', textAlign: 'center' }}>
-                    Pending Image Upload (Manual Sync Required)
+                    {'Pending Image Upload\n(Manual Sync Required)'}
                   </Text>
                 )}
 

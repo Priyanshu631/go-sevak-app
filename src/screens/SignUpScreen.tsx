@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   StatusBar,
+  Image,
 } from 'react-native';
 import { Card } from '../components/Card';
 import { Heading } from '../components/Typography';
@@ -17,6 +18,7 @@ import { theme } from '../theme/theme';
 import { PrimaryButton } from '../components/Button';
 
 const backgroundImg = require("../assets/bg.png");
+const logoImg = require("../assets/CowIcon.png");
 
 export default function SignUpScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -33,7 +35,7 @@ export default function SignUpScreen({ navigation }: any) {
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) Alert.alert('Error', error.message);
-    else Alert.alert('Success', 'Please check your email for a confirmation link!');
+    else Alert.alert('Success', 'Account created successfully! Please check your email for a confirmation link.');
     setLoading(false);
   };
 
@@ -53,6 +55,14 @@ export default function SignUpScreen({ navigation }: any) {
           keyboardShouldPersistTaps="handled"
         >
           <Card style={styles.card}>
+            
+            <View style={styles.logoContainer}>
+              <Image source={logoImg} style={styles.logo} />
+              <Heading style={styles.appName}>GoSevak</Heading>
+            </View>
+
+            <View style={styles.divider} />
+
             <Heading style={styles.header}>Create Account</Heading>
 
             <TextInput
@@ -63,6 +73,7 @@ export default function SignUpScreen({ navigation }: any) {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              selectionColor={theme.colors.text} // Set cursor color
             />
 
             <TextInput
@@ -72,6 +83,7 @@ export default function SignUpScreen({ navigation }: any) {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              selectionColor={theme.colors.text} // Set cursor color
             />
 
             <TextInput
@@ -81,17 +93,18 @@ export default function SignUpScreen({ navigation }: any) {
               value={repeatPassword}
               onChangeText={setRepeatPassword}
               secureTextEntry
+              selectionColor={theme.colors.text} // Set cursor color
             />
 
             <View style={styles.buttonContainer}>
               <PrimaryButton
-                title={loading ? 'Signing Up...' : 'Sign Up'}
+                title={loading ? 'Creating Account...' : 'Sign Up'}
                 onPress={handleSignUp}
                 disabled={loading}
               />
 
               <PrimaryButton
-                title="Already Have An Account? Login Here!"
+                title="Already Have An Account? Login!"
                 onPress={() => navigation.navigate('Login')}
               />
             </View>
@@ -117,6 +130,28 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: theme.colors.border,
     borderRadius: 15,
+    alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 8,
+  },
+  appName: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    fontFamily: 'serif',
+    color: theme.colors.text,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    width: '80%',
+    marginBottom: 15,
   },
   header: {
     textAlign: 'center',
@@ -126,20 +161,24 @@ const styles = StyleSheet.create({
     fontFamily: 'serif',
     color: theme.colors.text,
   },
+  // --- REVERTED AND ENHANCED INPUT STYLE ---
   input: {
+    height: 50, // Explicit height
+    width: '100%', // Ensure it takes full width of the card
     borderWidth: 2,
     borderColor: theme.colors.border,
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 15, // Increased padding
     fontSize: 16,
     fontFamily: 'serif',
     marginBottom: 15,
     color: theme.colors.text,
-    backgroundColor: 'transparent',
+    backgroundColor: 'transparent', // Ensure no default background is applied
   },
+  // --- END OF STYLE CHANGE ---
   buttonContainer: {
     marginTop: 10,
+    width: '100%',
     gap: 12,
   },
 });

@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   text: {
-    color: "white",
+    color: theme.colors.background,
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",

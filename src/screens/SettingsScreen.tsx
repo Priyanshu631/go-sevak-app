@@ -129,7 +129,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <BodyText style={styles.footerText}>App Version: 1.0.0</BodyText>
+              <BodyText style={styles.footerText}>GoSevakApp Version: 1.0.0</BodyText>
             </View>
           </Card>
         </ScreenWrapper>
