@@ -54,9 +54,21 @@ The full training process can be reviewed in the **[PTH Model Training Notebook]
 - **Hardware Compatibility:** This application is specifically optimized for modern Android phones and targets the **`ARM64-v8a`** architecture to achieve the native performance required for the on-device AI model. This architecture is standard in the overwhelming majority of contemporary smartphones (over 99% of active devices). Please be aware that attempting to run this app on a device or emulator with a different architecture (such as `x86`) will result in a native crash.
 
 ### ⚙️ Installation
+
+#### For Direct Use (Recommended for Users)
+You can directly install the pre-built application on your Android device.
+
+1.  Navigate to the latest release page: **[GoSevak Releases](https://github.com/Priyanshu631/go-sevak-app/releases)**
+2.  Under the **Assets** section, download the `GoSevakApp.apk` file to your Android phone.
+3.  You may need to enable "Install from unknown sources" in your phone's settings to install the app.
+4.  Open the downloaded file to install GoSevak.
+
+---
+
+#### For Developers (Building from Source)
 ```bash
 # Clone the repository
-git clone https://github.com/Priyanshu631/GoSevakApp.git
+git clone [https://github.com/Priyanshu631/GoSevakApp.git](https://github.com/Priyanshu631/GoSevakApp.git)
 
 # Navigate to the project directory
 cd GoSevakApp
