@@ -1,6 +1,6 @@
 # GoSevak
 
-![GoSevak Banner](./assets/banner.png)
+![GoSevak Banner](./src/assets/banner.png)
 
 ## An Offline-First AI Assistant for Bovine Breed Identification
 
